@@ -14,7 +14,7 @@ lastprice = ""
 commandlist = ['joke','']
 
 
-import wikipediaapi
+#import wikipediaapi
 
 
 def get_movie(name, api_key, max_length=350):
