@@ -1,8 +1,13 @@
 import random
 import funmanager
 #import openai
-#pip install requests beautifulsoup4 websocket-client colorama
-import pickledb
+pip install requests beautifulsoup4 websocket-client colorama pickledb cloudscraper g4f openai
+#import pickledb
+
+import cloudscraper
+from g4f.client import Client
+
+client = Client()
 
 import threading
 import requests
@@ -79,8 +84,46 @@ operators = []
 userdata = {}
 admins = []
 
-session = requests.Session()
+session = cloudscraper.create_scraper()
 cookie_jar = RequestsCookieJar()
+
+left_eyes = ["≽", "≼", "⩾", "⩽", ">", "<", "◕", "✧"]
+right_eyes = ["≽", "≼", "⩾", "⩽", ">", "<", "◕", "✧"]
+noses = ["•", "⩊", "⩌", "⪡", "⪢", "o", "∘"]
+mouths = ["^", "-", "_", "~", "ω", "w"]
+
+emoticons = [
+    "( ͡° ͜ʖ ͡°)", "(☞ ͡° ͜ʖ ͡°)☞", "(╯°□°)╯︵ ┻━┻", "┬─┬ ノ( ゜-゜ノ)",
+    "(ಥ_ಥ)", "¯\\_(ツ)_/¯", "(づ｡◕‿‿◕｡)づ", "(ノಠ益ಠ)ノ彡┻━┻", "(ಠ_ಠ)", "(ง •̀_•́)ง",
+    "(ᵔᴥᵔ)", "(ʘ‿ʘ)", "(≧▽≦)", "(・_・)", "(¬‿¬)", "ʕ•ᴥ•ʔ", "ʕノ•ᴥ•ʔノ ︵ ┻━┻",
+    "ʕ´•ᴥ•`ʔ", "(ಥ﹏ಥ)", "(>_<)", "(^_^)", "(o_O)", "(¬_¬)", "(✿◕‿◕)", "(✧ω✧)",
+    "(◕‿◕✿)", "(╥﹏╥)", "ヽ(´▽`)/", "(´∀`)", "(ᵕ.ᵕ)", "(*^‿^*)", "(•‿•)",
+    "( ͡ᵔ ͜ʖ ͡ᵔ )", "(ง'̀-'́)ง", "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "(≧◡≦)", "(Ｔ▽Ｔ)", "ヽ(✿ﾟ▽ﾟ)ノ",
+    "(~˘▾˘)~", "(☞ﾟ∀ﾟ)☞", "(´･_･`)", "(´・ω・｀)", "o(≧▽≦)o", "(✿╹◡╹)", "(>人<)",
+    "(*´ω｀*)", "(>w<)", "(⌒‿⌒)", "(─‿‿─)", "(･ิω･ิ)", "(°ロ°)", "(ʘᴗʘ✿)",
+    "(⊙_☉)", "(✪ω✪)", "(｀∀´)Ψ", "(╯︵╰,)", "(*≧ω≦)", "(☆▽☆)", "(✿´‿`)",
+    "(＾▽＾)", "(ᗒᗨᗕ)", "(╬ ಠ益ಠ)", "＼(º □ º l|l)/", "( ﾟヮﾟ)", "(๑˃ᴗ˂)ﻭ",
+    "(≧∇≦)/", "(๑•̀ㅂ•́)و✧", "ヽ(✧ᗜ✧)ノ", "(⌐■_■)", "(ಠ‿ಠ)", "(╬ Ò﹏Ó)",
+    "(╯_╰)", "(´･ᴗ･ ` )", "(o´▽`o)", "(ʘ╭╮ʘ)", "(´ヘ｀;)", "(⩾﹏⩽)", "(￣︿￣)",
+    "(*￣▽￣)b", "(๑•́ ω •̀๑)", "( ͡ಠ ʖ̯ ͡ಠ)", "(*≧︶≦))(￣▽￣* )ゞ", "(´･ω･`)ﾉ",
+    "(｡♥‿♥｡)", "ヽ(°◇° )ノ", "(ノ´∀`)ノ", "٩(｡•́‿•̀｡)۶", "(•̀ᴗ•́)و ̑̑", "(๑˘︶˘๑)",
+    "(⌒▽⌒)☆", "(∩^o^)⊃━☆ﾟ.*･｡ﾟ", "(∪｡∪)｡｡｡zzz", "(ノT＿T)ノ", "(´・ω・)っ由",
+    "ヽ(｡◕o◕｡)ﾉ.", "(。・ω・。)", "(´ε｀ )♡", "(╯▽╰ )", "(o˘◡˘o)"
+]
+
+def generate_random_smiley():
+    # Randomly pick parts for the smiley
+    left_eye = random.choice(left_eyes)
+    right_eye = random.choice(right_eyes)
+    nose = random.choice(noses)
+    mouth = random.choice(mouths)
+    
+    # Construct the smiley
+    smiley = f"{left_eye}^{nose}{mouth}{nose}^{right_eye}"
+    return smiley
+
+
+
 def log_message(message, log_type="INFO"):
     
     with open(logpath, 'a') as log_file:
@@ -203,113 +246,31 @@ def HandleUserCamClose(name):
     SendPublicMessage(f"{name}: {handle} was closed. Not really.")
 
 def SendPublicMessage(message):
-    emoticons = [
-    "( ͡° ͜ʖ ͡°)",  # Lenny face
-    "(☞ ͡° ͜ʖ ͡°)☞",  # Pointing Lenny
-    "(╯°□°)╯︵ ┻━┻",  # Table flip
-    "┬─┬ ノ( ゜-゜ノ)",  # Table fix
-    "(ಥ_ಥ)",  # Crying
-    "¯\\_(ツ)_/¯",  # Shrug
-    "(づ｡◕‿‿◕｡)づ",  # Hugging
-    "(ノಠ益ಠ)ノ彡┻━┻",  # Angry table flip
-    "(ಠ_ಠ)",  # Disapproval
-    "(ง •̀_•́)ง",  # Fighting pose
-    "(ᵔᴥᵔ)",  # Cute face
-    "(ʘ‿ʘ)",  # Excited
-    "(≧▽≦)",  # Very happy
-    "(・_・)",  # Neutral
-    "(¬‿¬)",  # Smirking
-    "ʕ•ᴥ•ʔ",  # Bear face
-    "ʕノ•ᴥ•ʔノ ︵ ┻━┻",  # Bear flipping table
-    "ʕ´•ᴥ•`ʔ",  # Sad bear
-    "(ಥ﹏ಥ)",  # Sad crying
-    "(>_<)",  # Frustrated
-    "(^_^)",  # Simple happy
-    "(o_O)",  # Confused
-    "(¬_¬)",  # Suspicious
-    "(✿◕‿◕)",  # Cute flower
-    "(✧ω✧)",  # Sparkly eyes
-    "(◕‿◕✿)",  # Cute and happy
-    "(╥﹏╥)",  # Crying hard
-    "ヽ(´▽`)/",  # Excited or cheering
-    "(´∀`)",  # Big smile
-    "(ᵕ.ᵕ)",  # Calm or shy
-    "(*^‿^*)",  # Blushing happy
-    "(•‿•)",  # Happy and cute
-    "( ͡ᵔ ͜ʖ ͡ᵔ )",  # Soft Lenny
-    "(ง'̀-'́)ง",  # Ready to fight
-    "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",  # Excited sparkles
-    "(≧◡≦)",  # Overjoyed
-    "(Ｔ▽Ｔ)",  # Happy crying
-    "ヽ(✿ﾟ▽ﾟ)ノ",  # Cute and excited
-    "(~˘▾˘)~",  # Dancing
-    "(☞ﾟ∀ﾟ)☞",  # Pointing
-    "(´･_･`)",  # Worried
-    "(´・ω・｀)",  # Sad or disappointed
-    "o(≧▽≦)o",  # Super happy
-    "(✿╹◡╹)",  # Sweet and cheerful
-    "(>人<)",  # Asking or praying
-    "(*´ω｀*)",  # Blushing shy
-    "(>w<)",  # Excited and playful
-    "(⌒‿⌒)",  # Content
-    "(─‿‿─)",  # Calm and confident
-    "(･ิω･ิ)",  # Neutral
-    "(°ロ°)",  # Shocked
-    "(ʘᴗʘ✿)",  # Amazed
-    "(⊙_☉)",  # Surprised
-    "(✪ω✪)",  # Starry eyes
-    "(｀∀´)Ψ",  # Mischievous
-    "(╯︵╰,)",  # Sad and disappointed
-    "(*≧ω≦)",  # Extremely happy
-    "(☆▽☆)",  # Enthusiastic
-    "(✿´‿`)",  # Sweet and shy
-    "(＾▽＾)",  # Cheerful
-    "(ᗒᗨᗕ)",  # Laughing hard
-    "(╬ ಠ益ಠ)",  # Very angry
-    "＼(º □ º l|l)/",  # Shocked and confused
-    "( ﾟヮﾟ)",  # Cheering
-    "(๑˃ᴗ˂)ﻭ",  # Pumped up
-    "(≧∇≦)/",  # Waving excitedly
-    "(๑•̀ㅂ•́)و✧",  # Determined
-    "ヽ(✧ᗜ✧)ノ",  # Super excited
-    "(⌐■_■)",  # Cool shades
-    "(ಠ‿ಠ)",  # Mischievous
-    "(╬ Ò﹏Ó)",  # Very annoyed
-    "(╯_╰)",  # Resigned
-    "(´･ᴗ･ ` )",  # Shy smile
-    "(o´▽`o)",  # Cheerful
-    "(ʘ╭╮ʘ)",  # Crying big tears
-    "(´ヘ｀;)",  # Embarrassed
-    "(⩾﹏⩽)",  # Sad face
-    "(￣︿￣)",  # Upset
-    "(*￣▽￣)b",  # Thumbs up
-    "(๑•́ ω •̀๑)",  # Concerned
-    "( ͡ಠ ʖ̯ ͡ಠ)",  # Displeased Lenny
-    "(*≧︶≦))(￣▽￣* )ゞ",  # Cute combo
-    "(´･ω･`)ﾉ",  # Waving sadly
-    "(｡♥‿♥｡)",  # Flirty
-    "ヽ(°◇° )ノ",  # Surprised
-    "(ノ´∀`)ノ",  # Waving happily
-    "٩(｡•́‿•̀｡)۶",  # Pumped up
-    "(•̀ᴗ•́)و ̑̑",  # Victory pose
-    "(๑˘︶˘๑)",  # Relaxed
-    "(⌒▽⌒)☆",  # Sparkly happiness
-    "(∩^o^)⊃━☆ﾟ.*･｡ﾟ",  # Throwing magic
-    "(∪｡∪)｡｡｡zzz",  # Sleeping
-    "(ノT＿T)ノ",  # Dramatic cry
-    "(´・ω・)っ由",  # Offering tea
-    "ヽ(｡◕o◕｡)ﾉ.",  # Happy excitement
-    "(。・ω・。)",  # Innocent
-    "(´ε｀ )♡",  # Blowing a kiss
-    "(╯▽╰ )",  # Relieved
-    "(o˘◡˘o)",  # Smiling peacefully
-    ]
+    global emoticons
+    #message = message.replace("\n", " ")
+    truncated_message = message[:400]
 
     time.sleep(0.6)
     emoji = random.choice(emoticons)
-    pb = {"stumble": "msg", "text": message + " " + emoji}
+    smiles = generate_random_smiley()
+    pb = {"stumble": "msg", "text": "🎉🎆🎇🥳🥳🥳🎆🎇🎉⎛⎝" + smiles + "⎠⎞\n" + truncated_message} # + " " + emoji}
     ws.send(json.dumps(pb))
     print(f"{Fore.LIGHTYELLOW_EX}Sent public message:\n{pb} {Style.RESET_ALL}")
+
+def SendGPTPublicMessage(message):
+    global emoticons
+    # Remove newlines from message
+    message = message.replace("\n", " ")
+
+    # Split the message into chunks of 400 characters
+    message_chunks = [message[i:i+400] for i in range(0, len(message), 400)]
+    
+    for chunk in message_chunks:
+        time.sleep(0.6)  # Wait for 0.6 seconds between messages
+        emoji = random.choice(emoticons)  # Random emoticon
+        pb = {"stumble": "msg", "text": "🤖" + chunk + " " + emoji}
+        ws.send(json.dumps(pb))
+        print(f"{Fore.LIGHTYELLOW_EX}Sent public message:\n{pb} {Style.RESET_ALL}")
 def YoutubeSearch(keyword):
     message = {
             'stumble': 'youtube',
@@ -653,7 +614,83 @@ def TokeTimerBot():
     # Restart the process to run every hour
     TokeTimerBot()
 
+def HandleMusicGPT(message):
+    messages = [{"role": "user", "content": "Roleplay"}]
+    messages.append({"role": "user", "content": message})
+    messages.append({"role": "system", "content": "Please respond in 200 characters or less."})
+    messages.append({"role": "system", "content": "You are a new age DJ music store owner who can suggest artist and song. Answer questions in character. Show only artist and song title. Dont use classics."})
+    
+    # Get response from the assistant
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        web_search=False
+    )
 
+    # Remove only Discord links from the response
+    def remove_discord_links(text):
+        # Regex to match Discord-specific URLs
+        discord_pattern = r'(https?://)?(www\.)?discord\.(gg|com)/\S+'
+        return re.sub(discord_pattern, '', text)
+
+    # Process assistant's reply
+    assistant_reply = response.choices[0].message.content
+    filtered_reply = remove_discord_links(assistant_reply)  # Remove Discord links
+    filtered_reply = filtered_reply.strip()  # Clean up extra whitespace
+
+    # Send the filtered reply
+    SendGPTPublicMessage(f"{filtered_reply}")
+
+def HandleGPT(message):
+    messages = [{"role": "user", "content": "Roleplay"}]
+    messages.append({"role": "user", "content": message})
+    messages.append({"role": "system", "content": "Please respond in 400 characters or less.Never include new line characters like \n"})
+    messages.append({"role": "system", "content": "You are a AI companion. Answer questions in character."})
+    # Get response from the assistant
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        web_search=False
+    )
+
+    def remove_discord_links(text):
+        # Regex to match Discord-specific URLs
+        discord_pattern = r'(https?://)?(www\.)?discord\.(gg|com)/\S+'
+        return re.sub(discord_pattern, '', text)
+    
+    assistant_reply = response.choices[0].message.content
+    filtered_reply = remove_discord_links(assistant_reply)  # Remove Discord links
+    filtered_reply = filtered_reply.strip()  # Clean up extra whitespace
+    SendGPTPublicMessage(f"{filtered_reply}")
+
+def HandleRPG(message):
+    messages = [{"role": "user", "content": "Hello"}]
+    messages.append({"role": "user", "content": message})
+    messages.append({"role": "system", "content": "Please respond in 400 characters or less."})
+    messages.append({"role": "system", "content": "You are a friendly shopkeepers parrot in a pirate town. Answer questions in character."})
+    # Get response from the assistant
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        web_search=False
+    )
+    def remove_discord_links(text):
+        # Regex to match Discord-specific URLs
+        discord_pattern = r'(https?://)?(www\.)?discord\.(gg|com)/\S+'
+        return re.sub(discord_pattern, '', text)
+
+    assistant_reply = response.choices[0].message.content
+    filtered_reply = remove_discord_links(assistant_reply)  # Remove Discord links
+    filtered_reply = filtered_reply.strip()  # Clean up extra whitespace
+    SendGPTPublicMessage(f"🦜: {filtered_reply}")
+
+def HandleGPTImage(message):
+    response = client.images.generate(
+    model="flux",
+    prompt=message,
+    response_format="url"
+    )
+    SendGPTPublicMessage(f"Generated image URL: {response.data[0].url}")
 def HandlePublicMessage(data):
     #print(f"[HANDLEPUBLICMESSAGE]\n{data}")
     if data:
@@ -736,10 +773,22 @@ def HandlePublicMessage(data):
             msg = ' '.join(cmd_arg[1:])
             wiki = funmanager.get_wikipedia_summary(msg)
             SendPublicMessage(wiki)
-        elif text.startswith(bot_prefix + 'chatgpt'):
-            msg = ' '.join(cmd_arg[1:])
-            response = HandleChatgpt(msg)
-            SendPublicMessage(response)
+        elif text.startswith(bot_prefix + 'gpt'):
+            #Elenora
+            
+            user_input = ' '.join(cmd_arg[1:])
+            HandleGPT(user_input)
+
+        elif text.startswith(bot_prefix + 'rpg'):
+            #Elenora
+            
+            user_input = ' '.join(cmd_arg[1:])
+            HandleRPG(user_input)
+        elif text.startswith(bot_prefix + 'image'):
+            #Elenora
+            
+            user_input = ' '.join(cmd_arg[1:])
+            HandleGPTImage(user_input)
 
         elif text.startswith(bot_prefix + 'imgur') and handle in operators:
             if not operators:
